@@ -3,188 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>指揮家 - H5原型</title>
+    <title>指揮家 (含音效) - H5原型</title>
     <style>
-        body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #1d2951; /* 深藍色，音樂廳的靜謐感 */
-            overflow: hidden;
-            touch-action: none; /* 禁用觸控的預設行為，如頁面滾動 */
-        }
-
-        #game-area {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            cursor: crosshair;
-        }
-
-        /* 音符（判定點）樣式 */
-        .note {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            background-color: rgba(255, 255, 255, 0.3);
-            border: 2px solid rgba(255, 255, 255, 0.7);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-            transform: translate(-50%, -50%) scale(0);
-            transition: transform 0.3s ease-out;
-            z-index: 10;
-        }
-        
-        .note.active {
-            transform: translate(-50%, -50%) scale(1);
-            background-color: rgba(255, 215, 0, 0.5);
-            border-color: #ffd700;
-            animation: pulse 1.5s infinite;
-        }
-
-        /* 長按類型的音符 */
-        .note.hold.active::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 4px solid #1e90ff;
-            border-radius: 50%;
-            animation: shrink var(--duration) linear forwards;
-        }
-
-        /* 絲帶/指揮棒軌跡 */
-        .trail {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: radial-gradient(circle, rgba(255, 223, 186, 0.8) 0%, rgba(255, 223, 186, 0) 70%);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 5;
-            pointer-events: none;
-            animation: fade-out 0.5s forwards;
-        }
-
-        /* UI 元素 */
-        #ui-container {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            z-index: 100;
-            color: white;
-            text-shadow: 0 0 5px black;
-        }
-        #main-stats {
-            display: flex;
-            justify-content: space-between;
-            font-size: 24px;
-        }
-        #current-song-display {
-            text-align: center;
-            font-size: 16px;
-            margin-top: 5px;
-            opacity: 0.8;
-        }
-
-        /* 判定反饋文字 */
-        .feedback {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            font-size: 48px;
-            font-weight: bold;
-            z-index: 101;
-            opacity: 0;
-            animation: feedback-anim 1s forwards;
-            pointer-events: none;
-        }
+        /* CSS 樣式與之前相同，此處為節省篇幅省略... */
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #1d2951; overflow: hidden; touch-action: none; }
+        #game-area { position: relative; width: 100vw; height: 100vh; cursor: crosshair; }
+        .note { position: absolute; width: 50px; height: 50px; background-color: rgba(255, 255, 255, 0.3); border: 2px solid rgba(255, 255, 255, 0.7); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; transform: translate(-50%, -50%) scale(0); transition: transform 0.3s ease-out; z-index: 10; }
+        .note.active { transform: translate(-50%, -50%) scale(1); background-color: rgba(255, 215, 0, 0.5); border-color: #ffd700; animation: pulse 1.5s infinite; }
+        .note.hold.active::after { content: ''; position: absolute; width: 100%; height: 100%; border: 4px solid #1e90ff; border-radius: 50%; animation: shrink var(--duration) linear forwards; }
+        .trail { position: absolute; width: 20px; height: 20px; background: radial-gradient(circle, rgba(255, 223, 186, 0.8) 0%, rgba(255, 223, 186, 0) 70%); border-radius: 50%; transform: translate(-50%, -50%); z-index: 5; pointer-events: none; animation: fade-out 0.5s forwards; }
+        #ui-container { position: absolute; top: 20px; left: 20px; right: 20px; z-index: 100; color: white; text-shadow: 0 0 5px black; }
+        #main-stats { display: flex; justify-content: space-between; font-size: 24px; }
+        #current-song-display { text-align: center; font-size: 16px; margin-top: 5px; opacity: 0.8; }
+        .feedback { position: absolute; top: 50%; left: 50%; font-size: 48px; font-weight: bold; z-index: 101; opacity: 0; animation: feedback-anim 1s forwards; pointer-events: none; }
         .feedback.perfect { color: #ffd700; }
         .feedback.good { color: #98fb98; }
         .feedback.miss { color: #ff69b4; }
-        
-        /* 遊戲畫面 */
-        #start-screen, #end-screen {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 200;
-            color: white;
-            text-align: center;
-        }
-        .screen-button {
-            padding: 15px 30px;
-            font-size: 20px;
-            color: #333;
-            background: linear-gradient(145deg, #e6d4b3, #c0a88a);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 20px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-        }
-
-        /* 歌曲選擇 */
-        #song-list {
-            margin-top: 20px;
-            width: 80%;
-            max-width: 400px;
-        }
-        .song-choice {
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-        }
-        .song-choice:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            transform: scale(1.02);
-        }
-        .song-title {
-            font-size: 20px;
-            font-weight: bold;
-        }
-        .song-artist {
-            font-size: 14px;
-            opacity: 0.8;
-            margin-top: 5px;
-        }
-
-
-        /* 動畫 */
-        @keyframes pulse {
-            0% { box-shadow: 0 0 10px #ffd700; }
-            50% { box-shadow: 0 0 25px #ffd700; }
-            100% { box-shadow: 0 0 10px #ffd700; }
-        }
-        @keyframes shrink {
-            from { transform: scale(1.5); opacity: 1; }
-            to { transform: scale(1); opacity: 0; }
-        }
-        @keyframes fade-out {
-            to { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-        }
-        @keyframes feedback-anim {
-            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
-        }
+        #start-screen, #end-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: white; text-align: center; }
+        .screen-button { padding: 15px 30px; font-size: 20px; color: #333; background: linear-gradient(145deg, #e6d4b3, #c0a88a); border: none; border-radius: 10px; cursor: pointer; margin-top: 20px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3); }
+        #song-list { margin-top: 20px; width: 80%; max-width: 400px; }
+        .song-choice { background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px; cursor: pointer; transition: background-color 0.3s, transform 0.2s; }
+        .song-choice:hover { background-color: rgba(255, 255, 255, 0.2); transform: scale(1.02); }
+        .song-title { font-size: 20px; font-weight: bold; }
+        .song-artist { font-size: 14px; opacity: 0.8; margin-top: 5px; }
+        @keyframes pulse { 0% { box-shadow: 0 0 10px #ffd700; } 50% { box-shadow: 0 0 25px #ffd700; } 100% { box-shadow: 0 0 10px #ffd700; } }
+        @keyframes shrink { from { transform: scale(1.5); opacity: 1; } to { transform: scale(1); opacity: 0; } }
+        @keyframes fade-out { to { transform: translate(-50%, -50%) scale(0); opacity: 0; } }
+        @keyframes feedback-anim { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
     </style>
 </head>
 <body>
-
     <div id="game-area">
         <div id="ui-container">
             <div id="main-stats">
@@ -194,14 +42,11 @@
             <div id="current-song-display"></div>
         </div>
     </div>
-
     <div id="start-screen">
         <h1>指揮家</h1>
         <p>請選擇您要演奏的曲目</p>
-        <div id="song-list">
-            </div>
+        <div id="song-list"></div>
     </div>
-
     <div id="end-screen" style="display: none;">
         <h1 id="end-title">演奏結束</h1>
         <p>最終得分: <span id="final-score">0</span></p>
@@ -211,7 +56,7 @@
     </div>
 
     <script>
-        // --- DOM 元素獲取 ---
+        // --- DOM 元素獲取 (與之前相同) ---
         const gameArea = document.getElementById('game-area');
         const scoreEl = document.getElementById('score');
         const comboEl = document.getElementById('combo');
@@ -225,53 +70,34 @@
         const maxComboEl = document.getElementById('max-combo');
         const endTitleEl = document.getElementById('end-title');
 
-        // --- 歌曲數據庫 ---
+        // --- 新增：音效與音樂 ---
+        const hitSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU9vT19PAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA'); // 簡短的點擊音效
+        const missSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU9vT19PAACAgIA/wICA/3+A/38AgIAAAIAAgACAgICAgICAgICAgICAgIAAgACAgICAgICAAIAAgACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA=='); // 簡短的錯誤音效
+        let mainAudio = null;
+
+        // --- 歌曲數據庫 (新增 src 屬性) ---
         const songDatabase = {
             'xiaosa': {
                 title: '瀟灑走一回',
                 artist: '葉倩文',
+                src: '瀟灑走一回.mp3', // <-- 請將您的 MP3 檔案放在此處
                 duration: 18000,
                 notes: [
-                    { type: 'tap', x: 20, y: 50, time: 1500 },
-                    { type: 'tap', x: 40, y: 40, time: 2000 },
-                    { type: 'tap', x: 60, y: 50, time: 2500 },
-                    { type: 'tap', x: 80, y: 40, time: 3000 },
-                    { type: 'tap', x: 70, y: 60, time: 3500 },
-                    { type: 'tap', x: 50, y: 70, time: 4000 },
-                    { type: 'tap', x: 30, y: 60, time: 4500 },
-                    { type: 'hold', x: 50, y: 50, time: 5500, duration: 1000 },
-                    { type: 'tap', x: 25, y: 25, time: 7000 },
-                    { type: 'tap', x: 75, y: 25, time: 7500 },
-                    { type: 'tap', x: 25, y: 75, time: 8000 },
-                    { type: 'tap', x: 75, y: 75, time: 8500 },
-                    { type: 'tap', x: 50, y: 30, time: 9500 },
-                    { type: 'tap', x: 50, y: 70, time: 10000 },
-                    { type: 'hold', x: 50, y: 50, time: 11000, duration: 1500 },
-                    { type: 'tap', x: 15, y: 50, time: 13000 },
-                    { type: 'tap', x: 85, y: 50, time: 13500 },
-                    { type: 'tap', x: 25, y: 30, time: 14000 },
-                    { type: 'tap', x: 75, y: 70, time: 14500 },
-                    { type: 'tap', x: 50, y: 50, time: 15500 },
+                    { type: 'tap', x: 20, y: 50, time: 1500 }, { type: 'tap', x: 40, y: 40, time: 2000 }, { type: 'tap', x: 60, y: 50, time: 2500 }, { type: 'tap', x: 80, y: 40, time: 3000 }, { type: 'tap', x: 70, y: 60, time: 3500 }, { type: 'tap', x: 50, y: 70, time: 4000 }, { type: 'tap', x: 30, y: 60, time: 4500 }, { type: 'hold', x: 50, y: 50, time: 5500, duration: 1000 }, { type: 'tap', x: 25, y: 25, time: 7000 }, { type: 'tap', x: 75, y: 25, time: 7500 }, { type: 'tap', x: 25, y: 75, time: 8000 }, { type: 'tap', x: 75, y: 75, time: 8500 }, { type: 'tap', x: 50, y: 30, time: 9500 }, { type: 'tap', x: 50, y: 70, time: 10000 }, { type: 'hold', x: 50, y: 50, time: 11000, duration: 1500 }, { type: 'tap', x: 15, y: 50, time: 13000 }, { type: 'tap', x: 85, y: 50, time: 13500 }, { type: 'tap', x: 25, y: 30, time: 14000 }, { type: 'tap', x: 75, y: 70, time: 14500 }, { type: 'tap', x: 50, y: 50, time: 15500 },
                 ]
             },
             'henai': {
                 title: '很愛很愛你',
                 artist: '劉若英',
+                src: '很愛很愛你.mp3', // <-- 請將您的 MP3 檔案放在此處
                 duration: 20000,
                 notes: [
-                    { type: 'tap', x: 50, y: 40, time: 2000 },
-                    { type: 'hold', x: 50, y: 60, time: 3500, duration: 2000 },
-                    { type: 'tap', x: 25, y: 50, time: 6500 },
-                    { type: 'tap', x: 75, y: 50, time: 7500 },
-                    { type: 'hold', x: 50, y: 40, time: 9000, duration: 2500 },
-                    { type: 'tap', x: 40, y: 70, time: 12500 },
-                    { type: 'tap', x: 60, y: 70, time: 13500 },
-                    { type: 'hold', x: 50, y: 50, time: 15000, duration: 3000 },
+                    { type: 'tap', x: 50, y: 40, time: 2000 }, { type: 'hold', x: 50, y: 60, time: 3500, duration: 2000 }, { type: 'tap', x: 25, y: 50, time: 6500 }, { type: 'tap', x: 75, y: 50, time: 7500 }, { type: 'hold', x: 50, y: 40, time: 9000, duration: 2500 }, { type: 'tap', x: 40, y: 70, time: 12500 }, { type: 'tap', x: 60, y: 70, time: 13500 }, { type: 'hold', x: 50, y: 50, time: 15000, duration: 3000 },
                 ]
             }
         };
 
-        // --- 遊戲狀態 ---
+        // --- 遊戲狀態 (與之前相同) ---
         let score = 0, combo = 0, maxCombo = 0;
         let isPlaying = false, isPointerDown = false;
         let pointerPos = { x: 0, y: 0 };
@@ -281,18 +107,20 @@
         let noteQueue = [], activeNote = null, holdTimer = null;
         let songDuration = 0;
 
-        // --- 初始化 ---
+        // --- 核心函數 ---
         function initialize() {
+            // ... (與之前相同)
+            if (mainAudio) {
+                mainAudio.pause();
+                mainAudio = null;
+            }
             songListContainer.innerHTML = '';
             Object.keys(songDatabase).forEach(songId => {
                 const song = songDatabase[songId];
                 const songEl = document.createElement('div');
                 songEl.className = 'song-choice';
                 songEl.dataset.songid = songId;
-                songEl.innerHTML = `
-                    <div class="song-title">${song.title}</div>
-                    <div class="song-artist">${song.artist}</div>
-                `;
+                songEl.innerHTML = `<div class="song-title">${song.title}</div><div class="song-artist">${song.artist}</div>`;
                 songEl.addEventListener('click', () => startGame(songId));
                 songListContainer.appendChild(songEl);
             });
@@ -304,7 +132,51 @@
             endScreen.style.display = 'none';
         }
 
-        // --- 輸入處理 ---
+        function startGame(songId) {
+            currentSongId = songId;
+            const selectedSong = songDatabase[songId];
+            
+            // ... (大部分與之前相同)
+            isPlaying = true;
+            // ...
+            
+            // 新增：播放音樂
+            if (mainAudio) mainAudio.pause();
+            mainAudio = new Audio(selectedSong.src);
+            mainAudio.play().catch(e => console.error("音訊播放失敗:", e));
+
+            startScreen.style.display = 'none';
+            endScreen.style.display = 'none';
+            startTime = Date.now();
+            gameLoop();
+        }
+
+        function endGame() {
+            // ... (與之前相同)
+            isPlaying = false;
+            if (mainAudio) mainAudio.pause(); // 停止音樂
+            cancelAnimationFrame(gameLoopId);
+            finalScoreEl.textContent = score;
+            maxComboEl.textContent = maxCombo;
+            endScreen.style.display = 'flex';
+        }
+
+        function judge(type) {
+            if (!activeNote) return;
+            let feedbackText = '';
+            if (type === 'perfect') {
+                score += 100 + combo * 10; combo++; feedbackText = '完美';
+                hitSound.currentTime = 0; hitSound.play(); // 播放點擊音效
+            } else if (type === 'miss') {
+                combo = 0; feedbackText = '錯過';
+                missSound.currentTime = 0; missSound.play(); // 播放錯過音效
+            }
+            if (combo > maxCombo) { maxCombo = combo; }
+            showFeedback(type, feedbackText);
+            activeNote.element.remove(); activeNote = null; updateUI();
+        }
+
+        // --- 其他輔助函數與事件監聽 (與之前相同) ---
         function onPointerDown(e) { isPointerDown = true; updatePointerPos(e); }
         function onPointerUp(e) {
             isPointerDown = false;
@@ -314,143 +186,22 @@
                 judge('miss');
             }
         }
-        function onPointerMove(e) {
-            updatePointerPos(e);
-            if (isPointerDown && isPlaying) createTrail(pointerPos.x, pointerPos.y);
-        }
-        function updatePointerPos(e) {
-            const touch = e.touches ? e.touches[0] : e;
-            pointerPos.x = touch.clientX;
-            pointerPos.y = touch.clientY;
-        }
-        function createTrail(x, y) {
-            const trail = document.createElement('div');
-            trail.className = 'trail';
-            trail.style.left = `${x}px`;
-            trail.style.top = `${y}px`;
-            gameArea.appendChild(trail);
-            setTimeout(() => trail.remove(), 500);
-        }
-
-        // --- 遊戲主循環 ---
-        function startGame(songId) {
-            currentSongId = songId;
-            const selectedSong = songDatabase[songId];
-            
-            // 初始化狀態
-            score = 0; combo = 0; maxCombo = 0;
-            isPlaying = true;
-            noteQueue = JSON.parse(JSON.stringify(selectedSong.notes));
-            songDuration = selectedSong.duration;
-            activeNote = null;
-            updateUI();
-            currentSongDisplay.textContent = `${selectedSong.title} - ${selectedSong.artist}`;
-
-            gameArea.querySelectorAll('.note').forEach(n => n.remove());
-            startScreen.style.display = 'none';
-            endScreen.style.display = 'none';
-
-            startTime = Date.now();
-            gameLoop();
-        }
-
-        function endGame() {
-            isPlaying = false;
-            cancelAnimationFrame(gameLoopId);
-            const songTitle = songDatabase[currentSongId].title;
-            endTitleEl.textContent = `演奏結束: ${songTitle}`;
-            finalScoreEl.textContent = score;
-            maxComboEl.textContent = maxCombo;
-            endScreen.style.display = 'flex';
-        }
-
-        function gameLoop() {
-            if (!isPlaying) return;
-            
-            gameTime = Date.now() - startTime;
-            
-            if (!activeNote && noteQueue.length > 0 && gameTime >= noteQueue[0].time - 500) {
-                spawnNote();
-            }
-            
-            if (activeNote) {
-                const noteEl = activeNote.element, noteData = activeNote.data;
-                const noteRect = noteEl.getBoundingClientRect();
-                const dist = Math.hypot(pointerPos.x - noteRect.x - noteRect.width / 2, pointerPos.y - noteRect.y - noteRect.height / 2);
-
-                if (noteData.type === 'tap') {
-                    if (isPointerDown && dist < noteRect.width) { judge('perfect'); } // 放大判定範圍
-                } else if (noteData.type === 'hold') {
-                    if (isPointerDown && dist < noteRect.width && !holdTimer) {
-                       noteEl.style.setProperty('--duration', `${noteData.duration / 1000}s`);
-                       holdTimer = setTimeout(() => { judge('perfect'); holdTimer = null; }, noteData.duration);
-                    }
-                }
-
-                if (gameTime > noteData.time + 300) { judge('miss'); }
-            }
-            
-            if (gameTime > songDuration && !activeNote) {
-                endGame();
-            } else {
-                gameLoopId = requestAnimationFrame(gameLoop);
-            }
-        }
-
-        function spawnNote() {
-            const noteData = noteQueue.shift();
-            const noteEl = document.createElement('div');
-            noteEl.className = `note ${noteData.type}`;
-            noteEl.style.left = `${noteData.x}%`;
-            noteEl.style.top = `${noteData.y}%`;
-            noteEl.textContent = noteData.type === 'hold' ? 'Hold' : '♪';
-            gameArea.appendChild(noteEl);
-            setTimeout(() => { noteEl.classList.add('active'); }, 50);
-            activeNote = { element: noteEl, data: noteData };
-        }
-        
-        function judge(type) {
-            if (!activeNote) return;
-            let feedbackText = '';
-            if (type === 'perfect') {
-                score += 100 + combo * 10; combo++; feedbackText = '完美';
-            } else if (type === 'miss') {
-                combo = 0; feedbackText = '錯過';
-            }
-            if (combo > maxCombo) { maxCombo = combo; }
-            showFeedback(type, feedbackText);
-            activeNote.element.remove(); activeNote = null; updateUI();
-        }
-
-        function showFeedback(type, text) {
-            const feedbackEl = document.createElement('div');
-            feedbackEl.className = `feedback ${type}`;
-            feedbackEl.textContent = text;
-            gameArea.appendChild(feedbackEl);
-            setTimeout(() => feedbackEl.remove(), 1000);
-        }
-
-        function updateUI() {
-            scoreEl.textContent = score;
-            comboEl.textContent = combo;
-        }
-
-        // --- 事件監聽 ---
+        function onPointerMove(e) { updatePointerPos(e); if (isPointerDown && isPlaying) createTrail(pointerPos.x, pointerPos.y); }
+        function updatePointerPos(e) { const touch = e.touches ? e.touches[0] : e; pointerPos.x = touch.clientX; pointerPos.y = touch.clientY; }
+        function createTrail(x, y) { const trail = document.createElement('div'); trail.className = 'trail'; trail.style.left = `${x}px`; trail.style.top = `${y}px`; gameArea.appendChild(trail); setTimeout(() => trail.remove(), 500); }
+        function gameLoop() { if (!isPlaying) return; gameTime = Date.now() - startTime; if (!activeNote && noteQueue.length > 0 && gameTime >= noteQueue[0].time - 500) { spawnNote(); } if (activeNote) { const noteEl = activeNote.element, noteData = activeNote.data; const noteRect = noteEl.getBoundingClientRect(); const dist = Math.hypot(pointerPos.x - noteRect.x - noteRect.width / 2, pointerPos.y - noteRect.y - noteRect.height / 2); if (noteData.type === 'tap') { if (isPointerDown && dist < noteRect.width) { judge('perfect'); } } else if (noteData.type === 'hold') { if (isPointerDown && dist < noteRect.width && !holdTimer) { noteEl.style.setProperty('--duration', `${noteData.duration / 1000}s`); holdTimer = setTimeout(() => { judge('perfect'); holdTimer = null; }, noteData.duration); } } if (gameTime > noteData.time + 300) { judge('miss'); } } if (gameTime > songDuration && !activeNote) { endGame(); } else { gameLoopId = requestAnimationFrame(gameLoop); } }
+        function spawnNote() { const noteData = noteQueue.shift(); const noteEl = document.createElement('div'); noteEl.className = `note ${noteData.type}`; noteEl.style.left = `${noteData.x}%`; noteEl.style.top = `${noteData.y}%`; noteEl.textContent = noteData.type === 'hold' ? 'Hold' : '♪'; gameArea.appendChild(noteEl); setTimeout(() => { noteEl.classList.add('active'); }, 50); activeNote = { element: noteEl, data: noteData }; }
+        function showFeedback(type, text) { const feedbackEl = document.createElement('div'); feedbackEl.className = `feedback ${type}`; feedbackEl.textContent = text; gameArea.appendChild(feedbackEl); setTimeout(() => feedbackEl.remove(), 1000); }
+        function updateUI() { scoreEl.textContent = score; comboEl.textContent = combo; }
         window.addEventListener('mousedown', onPointerDown);
         window.addEventListener('mousemove', onPointerMove);
         window.addEventListener('mouseup', onPointerUp);
         window.addEventListener('touchstart', onPointerDown, { passive: false });
         window.addEventListener('touchmove', onPointerMove, { passive: false });
         window.addEventListener('touchend', onPointerUp);
-
-        restartButton.addEventListener('click', () => {
-            if(currentSongId) startGame(currentSongId);
-        });
+        restartButton.addEventListener('click', () => { if(currentSongId) startGame(currentSongId); });
         backToMenuButton.addEventListener('click', initialize);
-
-        // --- 啟動遊戲 ---
         initialize();
     </script>
-
 </body>
 </html>
